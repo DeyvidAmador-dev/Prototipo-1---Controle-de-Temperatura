@@ -1,0 +1,49 @@
+int conectorSensor = A5;
+int conectorMotor = 10;
+int leituraSensor = 0;
+float tensao = 0;
+float temperatura = 0;
+unsigned long ultimaAtualizacao = 0;
+int estagioRpm = 0;
+bool startDoMotor = false;
+int velocidade = 0;
+
+
+void setup() {
+  pinMode(conectorMotor, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  leituraSensor = analogRead(conectorSensor);
+  tensao = 5.0 * leituraSensor / 1023.0;
+  temperatura = (tensao - 0.5) * 100;
+  
+
+  if (temperatura > 29.0) {
+    if (!startDoMotor) {
+      startDoMotor = true;
+      estagioRpm = 1;
+      analogWrite(conectorMotor, map(estagioRpm, 0, 4, 0, 255));
+      ultimaAtualizacao = millis();
+      velocidade = map(estagioRpm, 0, 4, 0, 100);
+    } else if (millis() - ultimaAtualizacao >= 30000 && estagioRpm < 4) {
+      estagioRpm++;
+      ultimaAtualizacao = millis();
+      analogWrite(conectorMotor, map(estagioRpm, 0, 4, 0, 255));
+      velocidade = map(estagioRpm, 0, 4, 0, 100);
+      
+    }
+
+  } else {
+    estagioRpm = 0;
+	analogWrite(conectorMotor, 0);
+    startDoMotor = false;
+    velocidade = map(estagioRpm, 0, 4, 0, 100);
+    }
+  
+  Serial.println("Temperatura tanque: " + String(temperatura) + " C.");
+  Serial.println("Velocidade do FAN: " + String(velocidade) + "%");
+
+  delay(1000);
+}
